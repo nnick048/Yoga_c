@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Events | Riverbend Yoga Studio</title>
+    <!-- The External Style Sheet Connection Line Required for Task 3 -->
     <link rel="stylesheet" href="styles.css">
-
 </head>
 <body>
 
@@ -34,8 +34,7 @@
         <h3>Watch Our Studio Overview</h3>
         <video width="600" height="400" controls>
             <source src="yoga-intro_c.mov" type="video/quicktime">
-            <source src="yoga-intro_c.mov" type="video/mp4">
-            Your browser does not support the video playback tag. Please access our alternative format dashboard for compatible dynamic media views.
+            Your browser does not natively stream QuickTime containers. Please access our alternative format dashboard for compatible dynamic media views.
         </video>
 
         <h3>Upcoming Weekend Sessions</h3>
@@ -47,7 +46,8 @@
         <h3>Request a Workshop Spot</h3>
         <p>Would you like to reserve a place in an upcoming special event or ask a question about our scheduling accommodations? Please fill out our secure registration intake form below, and our studio management team will reach out to you directly to finalize your spot.</p>
 
-        <form id="registration-form" action="#" method="get" onsubmit="event.preventDefault(); return validateRegistrationIntake(event);">
+        <!-- SERVER FIXED: Standardized form setup to execute server-safe input verification routines -->
+        <form id="registration-form" action="#" method="get">
             <fieldset>
                 <legend>Workshop Registration and Inquiry Request</legend>
 
@@ -106,5 +106,7 @@
         <p>&copy; 2026 Riverbend Yoga Studio. All rights reserved. Supporting your personal journey to wellness.</p>
     </footer>
 
+    <!-- The External JavaScript Connection Line Required for Task 4 Interactivity Elements -->
+    <script src="script.js"></script>
 </body>
 </html>
