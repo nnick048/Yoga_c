@@ -2,10 +2,6 @@
    1. CORE APPLICATION DATA STRUCTURES (DATA LAYER)
    ========================================================================== */
 
-/**
- * Array Object 1: Workshops Database Collection
- * Managed dynamically to display schedule arrays on the user interface.
- */
 const studioWorkshops = [
     {
         id: "mindfulness-intro",
@@ -27,10 +23,6 @@ const studioWorkshops = [
     }
 ];
 
-/**
- * Array Object 2: Client Preference Configuration State
- * Tracks the localized text UI messages and application mapping targets.
- */
 const uiLabels = [
     { key: "successAlert", text: "Sanctuary preference saved successfully!" },
     { key: "nameError", text: "Please enter your full first and last name." },
@@ -38,30 +30,23 @@ const uiLabels = [
 ];
 
 /* ==========================================================================
-   2. INTERACTIVE COMPONENT LAYER & STATE RESET
+   2. INTERACTIVE COMPONENT LAYER & STATE MANAGEMENT
    ========================================================================== */
 
-/**
- * Function 1: Initialize User Interface Triggers
- * Clears form fields on clean reloads and attaches event handlers.
- */
 function initializeSanctuaryFeatures() {
     const eventSelector = document.getElementById("target-event");
     const registrationForm = document.querySelector("form");
 
-    // Clear text values and old error banners on fresh window loads
+    // Revert form back to blank layouts upon safe reloads
     if (registrationForm) {
         registrationForm.reset(); 
         clearValidationBanners();
         
-        const inputs = registrationForm.querySelectorAll("input, textarea");
-        inputs.forEach(input => {
+        const textInputs = registrationForm.querySelectorAll("input, textarea");
+        textInputs.forEach(input => {
             input.value = "";
         });
     }
-
-    // Clear out old storage flags so choices begin fresh on fresh reloads
-    localStorage.removeItem("riverbend_preferred_event");
 
     if (eventSelector) {
         eventSelector.value = ""; 
@@ -73,13 +58,9 @@ function initializeSanctuaryFeatures() {
     }
 }
 
-/**
- * Function 2: Handle Event Dropdown Selections
- * Updates page dynamically to surface relevant workshop scheduling fields.
- */
 function handleEventSelectionChange(event) {
     const selectedId = event.target.value;
-    const matchingWorkshop = studioWorkshops.find(workshop => workshop.id === selectedId);
+    const matchingWorkshop = studioWorkshops.find(w => w.id === selectedId);
     
     updateScheduleDisplayPanel(matchingWorkshop);
     
@@ -90,10 +71,6 @@ function handleEventSelectionChange(event) {
     }
 }
 
-/**
- * Function 3: Update Schedule Display Panel
- * Generates semantic message parameters dynamically inside form view.
- */
 function updateScheduleDisplayPanel(workshop) {
     let targetPanel = document.getElementById("schedule-status-panel");
     
@@ -127,49 +104,53 @@ function updateScheduleDisplayPanel(workshop) {
    3. FORM VALIDATION RULES ENGINE (ERROR PREVENTION LAYER)
    ========================================================================== */
 
-/**
- * Function 4: Validate Registration Intake Form
- * Intercepts form data submissions to prevent errors and enforce valid string rules.
- */
 function validateRegistrationIntake(event) {
+    // CRITICAL FIRST STEP: Instantly stop the browser from reloading the page layout natively
+    event.preventDefault();
+
     const studentNameInput = document.getElementById("student-name");
     const studentEmailInput = document.getElementById("student-email");
+    const registrationForm = document.querySelector("form");
     
     let isFormValid = true;
     
-    // Wipe out older visual warnings from layout containers before computing
     clearValidationBanners();
     
-    // Check 1: Full Name field validation string rules
+    // Check 1: Name verification structure
     if (!studentNameInput.value.trim() || studentNameInput.value.trim().length < 4) {
-        const nameErrorText = uiLabels.find(label => label.key === "nameError").text;
+        const nameErrorText = uiLabels.find(l => l.key === "nameError").text;
         injectErrorMessageInline(studentNameInput, nameErrorText);
         isFormValid = false;
     }
     
-    // FIX: Using a bulletproof format query pattern that explicitly avoids escaping bugs
-    const cleanEmailString = studentEmailInput.value.trim();
-    const splitCheck = cleanEmailString.split("@");
+    // Check 2: Error-free split verification structure targeting emails securely
+    const cleanEmail = studentEmailInput.value.trim();
+    const emailParts = cleanEmail.split("@");
     
-    if (splitCheck.length !== 2 || splitCheck[0] === "" || !splitCheck[1].includes(".")) {
-        const emailErrorText = uiLabels.find(label => label.key === "emailError").text;
+    if (emailParts.length !== 2 || emailParts[0] === "" || emailParts[1] === "" || !emailParts[1].includes(".")) {
+        const emailErrorText = uiLabels.find(l => l.key === "emailError").text;
         injectErrorMessageInline(studentEmailInput, emailErrorText);
         isFormValid = false;
     }
     
-    // Interrupt layout pipeline routines if calculations determine invalid targets
-    if (!isFormValid) {
-        event.preventDefault();
-    } else {
-        const successMessage = uiLabels.find(label => label.key === "successAlert").text;
+    // If validation checks pass, display popup alert and reset inputs completely
+    if (isFormValid) {
+        const successMessage = uiLabels.find(l => l.key === "successAlert").text;
         alert(successMessage);
+        
+        // Wipe data states out after a human success confirmation prompt
+        if (registrationForm) {
+            registrationForm.reset();
+            const textFields = registrationForm.querySelectorAll("input, textarea");
+            textFields.forEach(field => {
+                field.value = "";
+            });
+        }
+        localStorage.removeItem("riverbend_preferred_event");
+        clearValidationBanners();
     }
 }
 
-/**
- * Function 5: Inject Error Message Inline
- * Spawns explicit red validation warnings directly underneath broken fields.
- */
 function injectErrorMessageInline(inputField, messageString) {
     const errorContainer = document.createElement("span");
     errorContainer.className = "validation-error-msg";
@@ -184,10 +165,6 @@ function injectErrorMessageInline(inputField, messageString) {
     inputField.style.backgroundColor = "#FFF5F5";
 }
 
-/**
- * Function 6: Clear Validation Banners
- * Resets form input aesthetics back to pristine baseline states on edit loops.
- */
 function clearValidationBanners() {
     const activeErrors = document.querySelectorAll(".validation-error-msg");
     activeErrors.forEach(msg => msg.remove());
@@ -204,5 +181,4 @@ function clearValidationBanners() {
     });
 }
 
-// Attach lifecycle registration script loop to execution sequence
 document.addEventListener("DOMContentLoaded", initializeSanctuaryFeatures);
