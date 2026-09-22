@@ -29,12 +29,13 @@ const uiLabels = [
 ];
 
 /* ==========================================================================
-   2. APP INITIALIZATION & STATE RESETS
+   2. APP INITIALIZATION & ROBUST EVENT HOOKING
    ========================================================================== */
 function initializeSanctuaryFeatures() {
     const eventSelector = document.getElementById("target-event");
     const registrationForm = document.getElementById("registration-form");
 
+    // Clean out previous cached values so the site loads perfectly fresh
     if (registrationForm) {
         registrationForm.reset();
         clearValidationBanners();
@@ -47,15 +48,22 @@ function initializeSanctuaryFeatures() {
 
     localStorage.removeItem("riverbend_preferred_event");
 
+    // Dynamic UI Hook: Listens for dropdown changes
     if (eventSelector) {
         eventSelector.value = "";
         eventSelector.addEventListener("change", handleEventSelectionChange);
+    }
+
+    // Server-Safe Intercept: Binds the submit validation check completely within the script
+    if (registrationForm) {
+        registrationForm.addEventListener("submit", validateRegistrationIntake);
     }
 }
 
 function handleEventSelectionChange(event) {
     const selectedId = event.target.value;
     const matchingWorkshop = studioWorkshops.find(w => w.id === selectedId);
+    
     updateScheduleDisplayPanel(matchingWorkshop);
     
     if (selectedId) {
@@ -65,8 +73,17 @@ function handleEventSelectionChange(event) {
     }
 }
 
+/**
+ * Server-Safe Panel Builder
+ * Places the date status display box safely inside the form content,
+ * regardless of whether you are running locally or live on a server.
+ */
 function updateScheduleDisplayPanel(workshop) {
     let targetPanel = document.getElementById("schedule-status-panel");
+    const eventSelector = document.getElementById("target-event");
+    
+    if (!eventSelector) return;
+
     if (!targetPanel) {
         targetPanel = document.createElement("div");
         targetPanel.id = "schedule-status-panel";
@@ -75,13 +92,14 @@ function updateScheduleDisplayPanel(workshop) {
         targetPanel.style.borderRadius = "4px";
         targetPanel.style.backgroundColor = "#FAFAF8";
         targetPanel.style.border = "1px solid #6C8E85";
+        targetPanel.style.fontWeight = "bold";
         
-        const formFieldset = document.querySelector("fieldset");
-        if (formFieldset) { formFieldset.appendChild(targetPanel); }
+        // SERVER FIXED: Appends the status panel right below the dropdown container paragraph
+        eventSelector.parentNode.appendChild(targetPanel);
     }
     
-    if (workshop) {
-        targetPanel.innerHTML = `<strong>Selected Schedule:</strong> ${workshop.schedule}`;
+    if (workshop && workshop.id !== "") {
+        targetPanel.innerHTML = `Selected Schedule: ${workshop.schedule} <br><span style="font-weight: normal; font-style: italic;">Intensity: ${workshop.intensity}</span>`;
         targetPanel.style.display = "block";
     } else {
         targetPanel.style.display = "none";
@@ -89,10 +107,10 @@ function updateScheduleDisplayPanel(workshop) {
 }
 
 /* ==========================================================================
-   3. ACCESSIBLE REGISTRATION VALIDATION LOGIC
+   3. ACCESSIBLE FORM VALIDATION & INTERCEPT MECHANICS
    ========================================================================== */
 function validateRegistrationIntake(event) {
-    // Prevent default browser behaviors twice for complete security
+    // SECURITY FIRST: Lock the live server out from performing native page updates or scrolls
     if (event && event.preventDefault) {
         event.preventDefault();
     }
@@ -104,14 +122,14 @@ function validateRegistrationIntake(event) {
     let isFormValid = true;
     clearValidationBanners();
 
-    // Check 1: Proportional Name Length Rule
+    // Check 1: Full Name formatting bounds validation
     if (!studentNameInput.value.trim() || studentNameInput.value.trim().length < 4) {
         const nameErrorText = uiLabels.find(l => l.key === "nameError").text;
         injectErrorMessageInline(studentNameInput, nameErrorText);
         isFormValid = false;
     }
 
-    // Check 2: Error-Free Split Email Syntax Formatter Verification
+    // Check 2: Server-Safe Character String Split Check for Email Address
     const emailVal = studentEmailInput.value.trim();
     if (!emailVal.includes("@") || !emailVal.includes(".") || emailVal.length < 5) {
         const emailErrorText = uiLabels.find(l => l.key === "emailError").text;
@@ -119,11 +137,11 @@ function validateRegistrationIntake(event) {
         isFormValid = false;
     }
 
-    // SUCCESS HANDLING BLOCK
+    // SUCCESS ACTIONS CAPTURE BLOCK
     if (isFormValid) {
         const successMessage = uiLabels.find(l => l.key === "successAlert").text;
         
-        // This structural pop-up alert stops everything on screen, explicitly proving submission!
+        // Displays the explicit system popup alert, confirming successful data submission!
         alert(successMessage);
         
         if (registrationForm) {
@@ -135,7 +153,7 @@ function validateRegistrationIntake(event) {
         clearValidationBanners();
     }
 
-    // Stop native HTML routing steps entirely
+    // Return false to doubly protect cross-browser form transmission pipelines
     return false;
 }
 
@@ -145,7 +163,8 @@ function injectErrorMessageInline(inputField, messageString) {
     errorContainer.style.color = "#D9534F";
     errorContainer.style.fontSize = "0.85rem";
     errorContainer.style.fontWeight = "bold";
-    errorContainer.style.marginTop = "4px";
+    errorContainer.style.display = "block";
+    errorContainer.style.marginTop = "6px";
     errorContainer.innerText = messageString;
     
     inputField.parentNode.appendChild(errorContainer);
@@ -167,4 +186,5 @@ function clearValidationBanners() {
     });
 }
 
+// Attach script load loops cleanly to lifecycle processing pipeline
 document.addEventListener("DOMContentLoaded", initializeSanctuaryFeatures);
