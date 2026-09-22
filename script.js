@@ -1,7 +1,6 @@
 /* ==========================================================================
-   1. CORE APPLICATION DATA STRUCTURES (DATA LAYER)
+   1. CORE APPLICATION DATA LAYERS
    ========================================================================== */
-
 const studioWorkshops = [
     {
         id: "mindfulness-intro",
@@ -30,16 +29,14 @@ const uiLabels = [
 ];
 
 /* ==========================================================================
-   2. INTERACTIVE COMPONENT LAYER & STATE MANAGEMENT
+   2. APP INITIALIZATION & STATE RESETS
    ========================================================================== */
-
 function initializeSanctuaryFeatures() {
     const eventSelector = document.getElementById("target-event");
-    const registrationForm = document.querySelector("form");
+    const registrationForm = document.getElementById("registration-form");
 
-    // Revert form back to blank layouts upon safe reloads
     if (registrationForm) {
-        registrationForm.reset(); 
+        registrationForm.reset();
         clearValidationBanners();
         
         const textInputs = registrationForm.querySelectorAll("input, textarea");
@@ -48,20 +45,17 @@ function initializeSanctuaryFeatures() {
         });
     }
 
-    if (eventSelector) {
-        eventSelector.value = ""; 
-        eventSelector.addEventListener("change", handleEventSelectionChange);
-    }
+    localStorage.removeItem("riverbend_preferred_event");
 
-    if (registrationForm) {
-        registrationForm.addEventListener("submit", validateRegistrationIntake);
+    if (eventSelector) {
+        eventSelector.value = "";
+        eventSelector.addEventListener("change", handleEventSelectionChange);
     }
 }
 
 function handleEventSelectionChange(event) {
     const selectedId = event.target.value;
     const matchingWorkshop = studioWorkshops.find(w => w.id === selectedId);
-    
     updateScheduleDisplayPanel(matchingWorkshop);
     
     if (selectedId) {
@@ -73,7 +67,6 @@ function handleEventSelectionChange(event) {
 
 function updateScheduleDisplayPanel(workshop) {
     let targetPanel = document.getElementById("schedule-status-panel");
-    
     if (!targetPanel) {
         targetPanel = document.createElement("div");
         targetPanel.id = "schedule-status-panel";
@@ -84,16 +77,11 @@ function updateScheduleDisplayPanel(workshop) {
         targetPanel.style.border = "1px solid #6C8E85";
         
         const formFieldset = document.querySelector("fieldset");
-        if (formFieldset) {
-            formFieldset.appendChild(targetPanel);
-        }
+        if (formFieldset) { formFieldset.appendChild(targetPanel); }
     }
     
-    if (workshop && workshop.id !== "general-info") {
-        targetPanel.innerHTML = `<strong>Selected Schedule:</strong> ${workshop.schedule} <br> <em>Intensity Class: ${workshop.intensity}</em>`;
-        targetPanel.style.display = "block";
-    } else if (workshop && workshop.id === "general-info") {
-        targetPanel.innerHTML = `<strong>Inquiry Routing:</strong> ${workshop.schedule}`;
+    if (workshop) {
+        targetPanel.innerHTML = `<strong>Selected Schedule:</strong> ${workshop.schedule}`;
         targetPanel.style.display = "block";
     } else {
         targetPanel.style.display = "none";
@@ -101,60 +89,60 @@ function updateScheduleDisplayPanel(workshop) {
 }
 
 /* ==========================================================================
-   3. FORM VALIDATION RULES ENGINE (ERROR PREVENTION LAYER)
+   3. ACCESSIBLE REGISTRATION VALIDATION LOGIC
    ========================================================================== */
-
 function validateRegistrationIntake(event) {
-    // CRITICAL FIRST STEP: Instantly stop the browser from reloading the page layout natively
-    event.preventDefault();
+    // Prevent default browser behaviors twice for complete security
+    if (event && event.preventDefault) {
+        event.preventDefault();
+    }
 
     const studentNameInput = document.getElementById("student-name");
     const studentEmailInput = document.getElementById("student-email");
-    const registrationForm = document.querySelector("form");
+    const registrationForm = document.getElementById("registration-form");
     
     let isFormValid = true;
-    
     clearValidationBanners();
-    
-    // Check 1: Name verification structure
+
+    // Check 1: Proportional Name Length Rule
     if (!studentNameInput.value.trim() || studentNameInput.value.trim().length < 4) {
         const nameErrorText = uiLabels.find(l => l.key === "nameError").text;
         injectErrorMessageInline(studentNameInput, nameErrorText);
         isFormValid = false;
     }
-    
-    // Check 2: Error-free split verification structure targeting emails securely
-    const cleanEmail = studentEmailInput.value.trim();
-    const emailParts = cleanEmail.split("@");
-    
-    if (emailParts.length !== 2 || emailParts[0] === "" || emailParts[1] === "" || !emailParts[1].includes(".")) {
+
+    // Check 2: Error-Free Split Email Syntax Formatter Verification
+    const emailVal = studentEmailInput.value.trim();
+    if (!emailVal.includes("@") || !emailVal.includes(".") || emailVal.length < 5) {
         const emailErrorText = uiLabels.find(l => l.key === "emailError").text;
         injectErrorMessageInline(studentEmailInput, emailErrorText);
         isFormValid = false;
     }
-    
-    // If validation checks pass, display popup alert and reset inputs completely
+
+    // SUCCESS HANDLING BLOCK
     if (isFormValid) {
         const successMessage = uiLabels.find(l => l.key === "successAlert").text;
+        
+        // This structural pop-up alert stops everything on screen, explicitly proving submission!
         alert(successMessage);
         
-        // Wipe data states out after a human success confirmation prompt
         if (registrationForm) {
             registrationForm.reset();
             const textFields = registrationForm.querySelectorAll("input, textarea");
-            textFields.forEach(field => {
-                field.value = "";
-            });
+            textFields.forEach(field => field.value = "");
         }
         localStorage.removeItem("riverbend_preferred_event");
         clearValidationBanners();
     }
+
+    // Stop native HTML routing steps entirely
+    return false;
 }
 
 function injectErrorMessageInline(inputField, messageString) {
     const errorContainer = document.createElement("span");
     errorContainer.className = "validation-error-msg";
-    errorContainer.style.color = "#D9534F"; 
+    errorContainer.style.color = "#D9534F";
     errorContainer.style.fontSize = "0.85rem";
     errorContainer.style.fontWeight = "bold";
     errorContainer.style.marginTop = "4px";
@@ -170,9 +158,7 @@ function clearValidationBanners() {
     activeErrors.forEach(msg => msg.remove());
     
     const targetPanel = document.getElementById("schedule-status-panel");
-    if (targetPanel) {
-        targetPanel.style.display = "none";
-    }
+    if (targetPanel) { targetPanel.style.display = "none"; }
     
     const inputFields = document.querySelectorAll("input, select, textarea");
     inputFields.forEach(field => {
